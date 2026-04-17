@@ -31,14 +31,12 @@ jobs:
 
             await page.goto('https://app.factorialhr.com/dashboard');
 
-            // Login
             await page.fill('input[type="email"]', process.env.EMAIL);
             await page.fill('input[type="password"]', process.env.PASSWORD);
             await page.click('button[type="submit"]');
 
             await page.waitForTimeout(5000);
 
-            // Click clock button (may need adjustment)
             await page.click('button:has-text("Clock")');
 
             await page.waitForTimeout(3000);
