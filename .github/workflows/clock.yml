@@ -8,10 +8,41 @@ on:
 jobs:
   clock:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Toggle clock
+      - name: Install Playwright
         run: |
-          curl -X POST https://api.factorialhr.com/api/2025-04-01/resources/attendance/shifts/toggle_clock \
-          -H "Authorization: Bearer ${{ secrets.FACTORIAL_TOKEN }}" \
-          -H "Content-Type: application/json" \
-          -d '{"employee_id":123}'
+          npm init -y
+          npm install playwright
+          npx playwright install --with-deps
+
+      - name: Run script
+        env:
+          EMAIL: ${{ secrets.FACTORIAL_EMAIL }}
+          PASSWORD: ${{ secrets.FACTORIAL_PASSWORD }}
+        run: |
+          cat << 'EOF' > script.js
+          const { chromium } = require('playwright');
+
+          (async () => {
+            const browser = await chromium.launch({ headless: true });
+            const page = await browser.newPage();
+
+            await page.goto('https://app.factorialhr.com/dashboard');
+
+            // Login
+            await page.fill('input[type="email"]', process.env.EMAIL);
+            await page.fill('input[type="password"]', process.env.PASSWORD);
+            await page.click('button[type="submit"]');
+
+            await page.waitForTimeout(5000);
+
+            // Click clock button (may need adjustment)
+            await page.click('button:has-text("Clock")');
+
+            await page.waitForTimeout(3000);
+            await browser.close();
+          })();
+          EOF
+
+          node script.js
