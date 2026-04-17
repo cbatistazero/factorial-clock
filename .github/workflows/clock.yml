@@ -1,47 +1,33 @@
-name: Factorial Clock
+const { chromium } = require('playwright');
 
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: "0 7 * * 1-5"
-    - cron: "0 16 * * 1-5"
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
 
-jobs:
-  clock:
-    runs-on: ubuntu-latest
+  // Go directly to login page
+  await page.goto('https://app.factorialhr.com/users/sign_in');
 
-    steps:
-      - name: Install Playwright
-        run: |
-          npm init -y
-          npm install playwright
-          npx playwright install --with-deps
+  await page.waitForTimeout(5000);
 
-      - name: Run script
-        env:
-          EMAIL: ${{ secrets.FACTORIAL_EMAIL }}
-          PASSWORD: ${{ secrets.FACTORIAL_PASSWORD }}
-        run: |
-          cat << 'EOF' > script.js
-          const { chromium } = require('playwright');
+  // Screenshot BEFORE login
+  await page.screenshot({ path: 'before-login.png' });
 
-          (async () => {
-            const browser = await chromium.launch({ headless: true });
-            const page = await browser.newPage();
+  // Try normal login
+  if (await page.locator('input[type="email"]').count() > 0) {
+    await page.fill('input[type="email"]', process.env.EMAIL);
+    await page.fill('input[type="password"]', process.env.PASSWORD);
+    await page.click('button[type="submit"]');
+  } else {
+    console.log("No email/password login found (likely SSO)");
+  }
 
-            await page.goto('https://app.factorialhr.com/dashboard');
+  await page.waitForTimeout(8000);
 
-            await page.fill('input[type="email"]', process.env.EMAIL);
-            await page.fill('input[type="password"]', process.env.PASSWORD);
-            await page.click('button[type="submit"]');
+  // Screenshot AFTER login attempt
+  await page.screenshot({ path: 'after-login.png' });
 
-            await page.waitForTimeout(5000);
+  const buttons = await page.locator('button').allTextContents();
+  console.log("BUTTONS:", buttons);
 
-            await page.click('button:has-text("Clock")');
-
-            await page.waitForTimeout(3000);
-            await browser.close();
-          })();
-          EOF
-
-          node script.js
+  await browser.close();
+})();
