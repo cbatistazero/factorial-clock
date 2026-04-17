@@ -1,0 +1,17 @@
+name: Factorial Clock
+
+on:
+  schedule:
+    - cron: "0 7 * * 1-5"
+    - cron: "0 16 * * 1-5"
+
+jobs:
+  clock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Toggle clock
+        run: |
+          curl -X POST https://api.factorialhr.com/api/2025-04-01/resources/attendance/shifts/toggle_clock \
+          -H "Authorization: Bearer ${{ secrets.FACTORIAL_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"employee_id":123}'
